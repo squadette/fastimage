@@ -9,6 +9,7 @@ require 'fakeweb'
 FixturePath = File.join(PathHere, "fixtures")
 
 GoodFixtures = {
+  "relax.jp2"=>[:jp2, [400, 300]],
   "test.bmp"=>[:bmp, [40, 27]],
   "test2.bmp"=>[:bmp, [1920, 1080]],
   "test.gif"=>[:gif, [17, 32]],

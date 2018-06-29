@@ -491,6 +491,12 @@ class FastImage
       case @stream.peek(3).bytes.to_a.last
       when 1 then :ico
       when 2 then :cur
+      else
+        if @stream.peek(4).bytes.to_a == [0x00, 0x00, 0x00, 0x0C]
+          if @stream.peek(8)[4..7] == "jP  "
+            :jp2
+          end
+        end
       end
     when "RI"
       :webp if @stream.peek(12)[8..11] == "WEBP"
@@ -565,6 +571,47 @@ class FastImage
         width = @stream.read_int
         width, height = height, width if exif && exif.rotated?
         return [width, height, exif ? exif.orientation : 1]
+      end
+    end
+  end
+
+  def parse_size_for_jp2
+    block_number = 0
+    loop do
+      block_number += 1
+
+      size_arr = @stream.read(4).unpack("N")
+      chunk_type = @stream.read(4)
+
+      if block_number == 1
+        if chunk_type == "jP  "
+          @stream.read(size_arr[0] - 8)
+          next
+        else
+          return
+        end
+      elsif block_number == 2
+        if chunk_type == "ftyp"
+          @stream.read(size_arr[0] - 8)
+          next
+        else
+          return
+        end
+      elsif block_number == 3
+        if chunk_type == "jp2h"
+          next
+        else
+          return
+        end
+      elsif block_number == 4
+        if chunk_type == "ihdr"
+          height, width = @stream.read(8).unpack("NN")
+          return [width, height]
+        else
+          return
+        end
+      else
+        return
       end
     end
   end
